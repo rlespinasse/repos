@@ -80,7 +80,7 @@ initRepositories() {
 
     root_folder=$1
 
-    sites=$(jq -r '.sites | map([.name, .site, .api, .type, .token] | join(",")) | join("\n")' < "${HOME}/.repos.json")
+    sites=$(jq -r '.sites | map([.owner, .site, .api, .type, .token] | join(",")) | join("\n")' < "${HOME}/.repos.json")
     while IFS="," read -r name site api nametype token;
     do
         all_repos=$(curl -s "${api}/${nametype}/${name}/repos?access_token=${token}&per_page=100" | jq -r ".[].name" | sort)
@@ -160,7 +160,7 @@ syncRepositories() {
     count=0
     TASK_PIDS=""
 
-    sites=$(jq -r '.sites | map([.name, .site, .api, .type, .token] | join(",")) | join("\n")' < "${HOME}/.repos.json")
+    sites=$(jq -r '.sites | map([.owner, .site, .api, .type, .token] | join(",")) | join("\n")' < "${HOME}/.repos.json")
     
     while IFS="," read -r name site api nametype token;
     do
