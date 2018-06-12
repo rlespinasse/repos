@@ -23,15 +23,16 @@ readonly STATUS_DONE="███████████████████�
 readonly STATUS_TODO="░░░░░░░░░░░░░░░░░░░░"
 status_log() {
     taskId=$1
-    repositoryName=$2
-    message=$3
-    percent=$4
+    branch=$2
+    repositoryName=$3
+    message=$4
+    percent=$5
 
     lendone=$((percent / 5))
     lentodo=20-$lendone
     print_percent=$(printf %3d "${percent}")
     
-    printf "| %-29s | %-166s\\n" "${STATUS_DONE:0:$lendone}${STATUS_TODO:0:$lentodo} | $print_percent %" "${repositoryName} (${message})" > "${STATUS_BASENAME}.${taskId}.tmp"
+    printf "| %-29s | %-15s | %-166s\\n" "${STATUS_DONE:0:$lendone}${STATUS_TODO:0:$lentodo} | $print_percent %" "${branch}" "${repositoryName} (${message})" > "${STATUS_BASENAME}.${taskId}.tmp"
     mv "${STATUS_BASENAME}.${taskId}.tmp" "${STATUS_BASENAME}.${taskId}"
 }
 
@@ -108,12 +109,12 @@ syncRepository() {
     REPODIR="${root_folder}/${site}/${name}/${repo}"
     repofull="${site}/${name}/${repo}"
 
-    status_log "${TASK_ID}" "$repofull" "fetch" "0"
+    status_log "${TASK_ID}" "HEAD" "$repofull" "fetch" "0"
     git -C "${REPODIR}" fetch origin -q --prune
 
     current_branch=$(git -C "${REPODIR}" rev-parse --abbrev-ref HEAD)
 
-    status_log "${TASK_ID}" "$repofull" "pull origin/${current_branch}" "30"
+    status_log "${TASK_ID}" "${current_branch}" "$repofull" "pull origin/${current_branch}" "30"
     git -C "${REPODIR}" add -A .
     stash_result=$(git -C "${REPODIR}" stash)
     git -C "${REPODIR}" pull -q origin "${current_branch}" >/dev/null 2>&1
@@ -121,32 +122,32 @@ syncRepository() {
 
     if [ $pull_result -gt 0 ]; then
 
-        status_log "${TASK_ID}" "$repofull" "checkout + pull master" "60"
+        status_log "${TASK_ID}" "${current_branch}" "$repofull" "checkout + pull master" "60"
         git -C "${REPODIR}" checkout -q master
         git -C "${REPODIR}" pull -q origin master
 
-        status_log "${TASK_ID}" "$repofull" "delete ${current_branch}" "70"
+        status_log "${TASK_ID}" "${current_branch}" "$repofull" "delete ${current_branch}" "70"
         git -C "${REPODIR}" branch -q -D "${current_branch}"
     elif [ "No local changes to save" != "$stash_result" ]; then
 
-        status_log "${TASK_ID}" "$repofull" "unstash changes" "60"
+        status_log "${TASK_ID}" "${current_branch}" "$repofull" "unstash changes" "60"
         git -C "${REPODIR}" stash pop -q
     fi
 
-    status_log "${TASK_ID}" "$repofull" "prune" "80"
+    status_log "${TASK_ID}" "${current_branch}" "$repofull" "prune" "80"
     git -C "${REPODIR}" prune >/dev/null 2>&1
 
-    status_log "${TASK_ID}" "$repofull" "gc" "90"
+    status_log "${TASK_ID}" "${current_branch}" "$repofull" "gc" "90"
     git -C "${REPODIR}" gc -q
 
     if [ "No local changes to save" != "$stash_result" ]; then
         if [ $pull_result -gt 0 ]; then
-            status_log "${TASK_ID}" "$repofull" "complete, check your stashed changes" "100"
+            status_log "${TASK_ID}" "${current_branch}" "$repofull" "complete, check your stashed changes" "100"
         else
-            status_log "${TASK_ID}" "$repofull" "complete, unstash ok" "100"
+            status_log "${TASK_ID}" "${current_branch}" "$repofull" "complete, unstash ok" "100"
         fi
     else
-        status_log "${TASK_ID}" "$repofull" "complete" "100"
+        status_log "${TASK_ID}" "${current_branch}" "$repofull" "complete" "100"
     fi
 }
 
