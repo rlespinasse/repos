@@ -1,0 +1,120 @@
+= repos
+
+Manage your git repositories.
+
+== Support
+
+* **github**,
+* **github entreprise**.
+
+A repository will be accessible at `<root folder>/<site url>/<owner name>/<repository name>`
+
+[source]
+====
+<root folder>
+├── github.com
+│   └── rlespinasse
+│       ├── repos
+│       └── ...
+└── github.myentreprise.com
+    └── EntrepriseOrganization
+        ├── SomeRepository
+        ├── AnotherRepository
+        └── ...
+====
+
+
+== Usage
+
+After <<Installation,**repos** installation>>, you can use it in your terminal:
+
+[source,shell]
+----
+$ repos
+----
+
+== Installation
+
+**repos** comes with `install` command
+
+. Download the project on your local machine in a folder of your choice
++
+[source,shell]
+----
+$ git clone git@github.com:rlespinasse/repos
+----
+
+. Install **repos** in your PATH
++
+[source,shell]
+----
+$ cd repos
+$ ./cli install repos <1>
+----
++
+<1> You can choose to call it what ever you want.
+
+. Get **repos** dependencies to install before using it
++
+[source,shell]
+----
+$ ./cli dependencies
+----
+
+. Reload your PATH and use **repos** to discover its capabilities
++
+[source,shell]
+----
+<reload terminal>
+$ repos
+----
+
+. You also need to initialize the runtime configuration file named `~/.reposrc.json`
++
+[source,shell]
+----
+$ repos rc init
+----
++
+It will contains configuration in order to work, and so on.
++
+TIP: You can also be compliant with `golang` tree structure by setting `root_folder` value to `${GOPATH}/src` (or `~/go/src`).
+
+== Uninstall repos
+
+**repos** comes also with `uninstall` command
+
+. Install **repos** in your PATH
++
+[source,shell]
+----
+$ cd repos
+$ ./cli uninstall repos <1>
+----
+<1> Or the name, you have given to **repos**
+
+== Tweak repos
+
+**repos** follow the `bash-cli` structure in order to work.
+It's based on a tree structure starting by the main folder `app` and the following files:
+
+* `command` file contains the script to execute
+* `command.help` file contains the help message to print
+* `command.usage` file contains the arguments usage (in one line)
+
+In your **development** repos folder, you can run **repos** with the internal cli `./cli command`.
+
+If you need to use a command in the tree, call `./cli` with each folder to access your command:
+
+* **command1** in `folder1` can be call with `./cli folder1 command1`
+* **command2** in `folder2/folder2.1` can be call with `./cli folder2 folder2.1 command2`
+
+=== Command manipulation
+
+If you want to:
+
+* add a new command, you need to run `./cli command create <command>`
++
+The new command is directly usable and you can start to develop your new functionality.
+
+* remove a command, you need to run `./cli command rm <command>`

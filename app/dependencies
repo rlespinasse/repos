@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+info "git: to manipulate git repositories - https://git-scm.com/downloads/"
+info "jq: to manipulate json data - https://stedolan.github.io/jq/"

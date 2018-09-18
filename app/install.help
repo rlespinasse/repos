@@ -1,0 +1,8 @@
+Installs your command line app under the given name by
+creating a symlink to the Bash CLI proxy.
+
+Arguments:
+    name        The name you would like to use for your commands.
+    folder      (optional) The directory you would like the
+                command line installed to.
+                Default: /usr/bin or /usr/local/bin

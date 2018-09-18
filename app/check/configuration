@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+# Load utility methods
+. "$ROOT_DIR/utils"
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    location=$(cli_call rc location)
+    if [ ! -f "$location" ];
+    then
+        warning "Missing '$location' file"
+        cli_call rc init
+        exit 1
+    fi
+fi

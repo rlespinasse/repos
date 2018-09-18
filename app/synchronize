@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+# Load utility methods
+. "$ROOT_DIR/utils"
+
+syncRepository() {
+    repo=$1
+    site=$2
+    name=$3
+    root_folder=$4
+
+    REPODIR="${root_folder}/${site}/${name}/${repo}"
+    repofull="${site}/${name}/${repo}"
+
+    info "${repofull} - fetch origin"
+    git -C "${REPODIR}" fetch origin -q --prune
+
+    current_branch=$(git -C "${REPODIR}" rev-parse --abbrev-ref HEAD)
+
+    info "${repofull} - pull origin/${current_branch}"
+    git -C "${REPODIR}" add -A .
+    stash_result=$(git -C "${REPODIR}" stash)
+    git -C "${REPODIR}" pull -q origin "${current_branch}" >/dev/null 2>&1
+    pull_result=$?
+
+    if [ $pull_result -gt 0 ]; then
+
+        default_branch=$(git symbolic-ref HEAD | sed 's/.*\///')
+        info "${repofull} - synchronize ${default_branch} branch"
+        git -C "${REPODIR}" checkout -q "${default_branch}"
+        git -C "${REPODIR}" pull -q origin "${default_branch}"
+
+        info "${repofull} - delete ${current_branch}"
+        git -C "${REPODIR}" branch -q -D "${current_branch}"
+    elif [ "No local changes to save" != "$stash_result" ]; then
+
+        info "${repofull} - unstash changes on ${current_branch}"
+        git -C "${REPODIR}" stash pop -q
+    fi
+
+    info "${repofull} - prune"
+    git -C "${REPODIR}" prune >/dev/null 2>&1
+
+    info "${repofull} - gc"
+    git -C "${REPODIR}" gc -q
+
+    if [ "No local changes to save" != "$stash_result" ]; then
+        if [ $pull_result -gt 0 ]; then
+            info "${repofull} - complete, check your stashed changes"
+        else
+            info "${repofull} - complete, unstash ok"
+        fi
+    else
+        info "${repofull} - complete"
+    fi
+}
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    cli_call check configuration
+
+    root_folder=$(cli_call rc read '.root_folder')
+    root_folder="${root_folder/#\~/$HOME}"
+
+    while IFS="," read -r name site api nametype token;
+    do
+        all_repos=$(curl -s "${api}/${nametype}/${name}/repos?access_token=${token}&per_page=100" | jq -r ".[].name" | sort)
+        while read -r repo;
+        do
+            mkdir -p "${root_folder}/${site}/${name}"
+            if [ -d "${root_folder}/${site}/${name}/${repo}" ];
+            then
+                syncRepository "$repo" "${site}" "${name}" "${root_folder}" &
+            fi
+        done < <(echo "${all_repos}")
+    done < <(cli_call rc read '.sites | map([.owner, .site, .api, .type, .token] | join(",")) | join("\n")')
+
+    for job in $(jobs -p)
+    do
+        wait "$job" || true
+    done
+fi

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+# Load utility methods
+. "$ROOT_DIR/utils"
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    cli_call check configuration
+
+    root_folder=$(cli_call rc read '.root_folder')
+    root_folder="${root_folder/#\~/$HOME}"
+
+    while IFS="," read -r name site api nametype token;
+    do
+        all_repos=$(curl -s "${api}/${nametype}/${name}/repos?access_token=${token}&per_page=100" | jq -r ".[].name" | sort)
+
+        while read -r repo;
+        do
+            mkdir -p "${root_folder}/${site}/${name}"
+            if [ ! -d "${root_folder}/${site}/${name}/${repo}" ];
+            then
+                info "Clone ${site}/${name}/${repo}"
+
+                mkdir -p "${root_folder}/repos/${site}/${name}"
+                git clone "git@${site}:${name}/${repo}.git" "${root_folder}/${site}/${name}/${repo}"
+            fi
+        done < <(echo "${all_repos}")
+    done < <(cli_call rc read '.sites | map([.owner, .site, .api, .type, .token] | join(",")) | join("\n")')
+fi
