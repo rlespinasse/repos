@@ -1,5 +1,1 @@
-TODO: Fill out the help information for this command.
-
-Arguments:
-    arguments    the arguments you wish to provide to this command.
-
+Synchronize and clean present repositories based on configuration file.

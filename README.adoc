@@ -10,7 +10,7 @@ Manage your git repositories.
 A repository will be accessible at `<root folder>/<site url>/<owner name>/<repository name>`
 
 [source]
-====
+----
 <root folder>
 ├── github.com
 │   └── rlespinasse
@@ -21,7 +21,7 @@ A repository will be accessible at `<root folder>/<site url>/<owner name>/<repos
         ├── SomeRepository
         ├── AnotherRepository
         └── ...
-====
+----
 
 
 == Usage
