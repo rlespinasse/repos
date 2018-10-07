@@ -6,6 +6,7 @@ IFS=$'\n\t'
 . "$ROOT_DIR/utils"
 
 syncRepository() {
+
     repo=$1
     site=$2
     name=$3
@@ -47,9 +48,12 @@ syncRepository() {
     git -C "${REPODIR}" gc -q
 
     if [ "No local changes to save" != "$stash_result" ]; then
+
         if [ $pull_result -gt 0 ]; then
+
             info "${repofull} - complete, check your stashed changes"
         else
+
             info "${repofull} - complete, unstash ok"
         fi
     else
@@ -58,23 +62,33 @@ syncRepository() {
 }
 
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+
     cli_call check configuration
 
     root_folder=$(cli_call rc read '.root_folder')
     root_folder="${root_folder/#\~/$HOME}"
 
-    while IFS="," read -r name site api nametype token;
+    info "apply global configuration"
+    while IFS="," read -r key value;
     do
+        info "apply configuration $key = $value"
+        git config --global "$key" "$value"
+    done < <(cli_call rc read '.config | to_entries[] | [.key, .value]  | @csv' | sed 's/"//g')
+
+    while IFS="," read -r name site api nametype token config;
+    do
+
         all_repos=$(curl -s "${api}/${nametype}/${name}/repos?access_token=${token}&per_page=100" | jq -r ".[].name" | sort)
         while read -r repo;
         do
+
             mkdir -p "${root_folder}/${site}/${name}"
             if [ -d "${root_folder}/${site}/${name}/${repo}" ];
             then
-                syncRepository "$repo" "${site}" "${name}" "${root_folder}" &
+                syncRepository "$repo" "${site}" "${name}" "${root_folder}" "${config}" &
             fi
         done < <(echo "${all_repos}")
-    done < <(cli_call rc read '.sites | map([.owner, .site, .api, .type, .token] | join(",")) | join("\n")')
+    done < <(cli_call rc read '.sites | to_entries[] | .value | [.owner, .site, .api, .type, .token, (.config | to_entries[] | [.key, .value] | "\(.[0])=\(.[1])")] | join(",")')
 
     for job in $(jobs -p)
     do
