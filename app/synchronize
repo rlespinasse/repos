@@ -11,9 +11,18 @@ syncRepository() {
     site=$2
     name=$3
     root_folder=$4
+    config=$5
 
     REPODIR="${root_folder}/${site}/${name}/${repo}"
     repofull="${site}/${name}/${repo}"
+
+    while IFS="=" read -r key value;
+    do
+
+        info "${repofull} - apply configuration $key = $value"
+        git -C "${REPODIR}" config "$key" "$value"
+    done < <(echo "$config" | tr ',' '\n')
+
 
     info "${repofull} - fetch origin"
     git -C "${REPODIR}" fetch origin -q --prune
