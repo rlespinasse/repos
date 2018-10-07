@@ -11,7 +11,7 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     root_folder=$(cli_call rc read '.root_folder')
     root_folder="${root_folder/#\~/$HOME}"
 
-    while IFS="," read -r name site api nametype token;
+    while IFS="," read -r name site api nametype token config;
     do
         all_repos=$(curl -s "${api}/${nametype}/${name}/repos?access_token=${token}&per_page=100" | jq -r ".[].name" | sort)
 
@@ -24,7 +24,14 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
 
                 mkdir -p "${root_folder}/repos/${site}/${name}"
                 git clone "git@${site}:${name}/${repo}.git" "${root_folder}/${site}/${name}/${repo}"
+
+                while IFS="=" read -r key value;
+                do
+
+                    info "${root_folder}/${site}/${name}/${repo} - apply configuration $key = $value"
+                    git -C "${root_folder}/${site}/${name}/${repo}" config "$key" "$value"
+                done < <(echo "$config" | tr ',' '\n')
             fi
         done < <(echo "${all_repos}")
-    done < <(cli_call rc read '.sites | map([.owner, .site, .api, .type, .token] | join(",")) | join("\n")')
+    done < <(cli_call rc read '.sites | to_entries[] | .value | [.owner, .site, .api, .type, .token, (.config | to_entries[] | [.key, .value] | "\(.[0])=\(.[1])")] | join(",")')
 fi
