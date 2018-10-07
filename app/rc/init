@@ -26,6 +26,12 @@ cat > "$RC_PATH" <<EOF
                 "user.name": "Your Name In Your Entreprise"
                 "user.email": "youremail@yourentreprise.com"
             },
+            "repositories": {
+                "include": [
+                    "some_repository",
+                    "another_repository"
+                ]
+            }
         },
         "github.com/YOUR_LOGIN": {
             "site": "github.com",
@@ -33,7 +39,13 @@ cat > "$RC_PATH" <<EOF
             "owner": "YOUR_LOGIN",
             "type": "users",
             "token": "YOUR API TOKEN from github.com",
-            "config": {}
+            "config": {},
+            "repositories": {
+                "exclude": [
+                    "some_repository",
+                    "another_repository"
+                ]
+            }
         }
     }
 }

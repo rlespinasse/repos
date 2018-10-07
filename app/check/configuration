@@ -24,5 +24,17 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
             newconfig=$(jq -r --arg site "$site" '.sites[$site].config={}' "$location")
             echo "$newconfig" > "$location"
         fi
+
+        repositoriesincludeexists=$(jq -r --arg site "$site" '.sites[$site].repositories.include' "$location")
+        if [ "$repositoriesincludeexists" == "null" ]; then
+            newconfig=$(jq -r --arg site "$site" '.sites[$site].repositories.include=[]' "$location")
+            echo "$newconfig" > "$location"
+        fi
+
+        repositoriesexcludeexists=$(jq -r --arg site "$site" '.sites[$site].repositories.exclude' "$location")
+        if [ "$repositoriesexcludeexists" == "null" ]; then
+            newconfig=$(jq -r --arg site "$site" '.sites[$site].repositories.exclude=[]' "$location")
+            echo "$newconfig" > "$location"
+        fi
     done < <(jq -r '.sites | to_entries[] | .key' "$location" | sed '/^$/d')
 fi

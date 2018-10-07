@@ -19,20 +19,39 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
 
             while read -r repo;
             do
-                mkdir -p "${root_folder}/${site}/${name}"
-                if [ ! -d "${root_folder}/${site}/${name}/${repo}" ];
+                includerepos=$(cli_call rc read '.sites["'"$sitekey"'"].repositories.include')
+                excluderepos=$(cli_call rc read '.sites["'"$sitekey"'"].repositories.exclude')
+
+                status="excluded"
+                if [ "$includerepos" == "[]" ] && [ "$excluderepos" == "[]" ];
                 then
-                    info "Clone ${site}/${name}/${repo}"
+                    status="initialize_it"
+                else
+                    includerepo=$(cli_call rc read '.sites["'"$sitekey"'"].repositories | select(.include[] | contains ("'"$repo"'"))')
+                    excluderepo=$(cli_call rc read '.sites["'"$sitekey"'"].repositories | select(.exclude[] | contains ("'"$repo"'"))')
+                    if [ -z "$excluderepo" ] && [ -n "$includerepo" ]; then
+                        status="initialize_it"
+                    fi
+                fi
 
-                    mkdir -p "${root_folder}/repos/${site}/${name}"
-                    git clone "git@${site}:${name}/${repo}.git" "${root_folder}/${site}/${name}/${repo}"
+                if [ "$status" == "initialize_it" ]; then
+                    mkdir -p "${root_folder}/${site}/${name}"
+                    if [ ! -d "${root_folder}/${site}/${name}/${repo}" ];
+                    then
+                        info "Clone ${site}/${name}/${repo}"
 
-                    while IFS="=" read -r key value;
-                    do
+                        mkdir -p "${root_folder}/repos/${site}/${name}"
+                        git clone "git@${site}:${name}/${repo}.git" "${root_folder}/${site}/${name}/${repo}"
 
-                        info "${root_folder}/${site}/${name}/${repo} - apply configuration $key = $value"
-                        git -C "${root_folder}/${site}/${name}/${repo}" config "$key" "$value"
-                    done < <(cli_call rc read '.sites["'"$sitekey"'"].config | to_entries[] | [.key, .value] | "\(.[0])=\(.[1])"' | sed '/^$/d')
+                        while IFS="=" read -r key value;
+                        do
+
+                            info "${root_folder}/${site}/${name}/${repo} - apply configuration $key = $value"
+                            git -C "${root_folder}/${site}/${name}/${repo}" config "$key" "$value"
+                        done < <(cli_call rc read '.sites["'"$sitekey"'"].config | to_entries[] | [.key, .value] | "\(.[0])=\(.[1])"' | sed '/^$/d')
+                    fi
+                elif [ "$status" == "excluded" ]; then
+                    warning "${site}/${name}/${repo} excluded"
                 fi
             done < <(echo "${all_repos}")
         done < <(cli_call rc read '.sites["'"$sitekey"'"] | [.owner, .site, .api, .type, .token] | join(",")')
