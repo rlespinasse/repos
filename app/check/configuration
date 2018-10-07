@@ -6,6 +6,8 @@ IFS=$'\n\t'
 . "$ROOT_DIR/utils"
 
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+
+    info "check if configuration exists"
     location=$(cli_call rc location)
     if [ ! -f "$location" ];
     then
@@ -14,12 +16,13 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
         exit 1
     fi
 
-    without_config_items=$(jq '.sites[] | select(.config==null) | .config={}' < "$location")
-    if [ -n "$without_config_items" ]; then
-
-        error "missing config fields in sites items"
-        info "add missing config"
-        echo "$without_config_items" | jq
-        exit 1
-    fi
+    info "check if configuration information are readable"
+    while read -r site;
+    do
+        configexists=$(jq -r --arg site "$site" '.sites[$site].config' "$location")
+        if [ "$configexists" == "null" ]; then
+            newconfig=$(jq -r --arg site "$site" '.sites[$site].config={}' "$location")
+            echo "$newconfig" > "$location"
+        fi
+    done < <(jq -r '.sites | to_entries[] | .key' "$location" | sed '/^$/d')
 fi

@@ -11,22 +11,31 @@ fi
 cat > "$RC_PATH" <<EOF
 {
     "root_folder": "~/sources",
-    "sites": [
-        {
-            "site": "github.myentreprise.com",
-            "api": "https://github.myentreprise.com/api/v3",
+    "config": {
+        "user.name": "Your Name"
+        "user.email": "youremail@yourprovider.tld"
+    },
+    "sites": {
+        "github.yourentreprise.com/EntrepriseOrganization": {
+            "site": "github.yourentreprise.com",
+            "api": "https://github.yourentreprise.com/api/v3",
             "owner": "EntrepriseOrganization",
             "type": "orgs",
-            "token": "YOUR API TOKEN from github.myentreprise.com"
+            "token": "YOUR API TOKEN from github.yourentreprise.com"
+            "config": {
+                "user.name": "Your Name In Your Entreprise"
+                "user.email": "youremail@yourentreprise.com"
+            },
         },
-        {
+        "github.com/YOUR_LOGIN": {
             "site": "github.com",
             "api": "https://api.github.com",
-            "owner": "YOUR LOGIN",
+            "owner": "YOUR_LOGIN",
             "type": "users",
-            "token": "YOUR API TOKEN from github.com"
+            "token": "YOUR API TOKEN from github.com",
+            "config": {}
         }
-    ]
+    }
 }
 EOF
 
