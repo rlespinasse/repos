@@ -13,4 +13,13 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
         cli_call rc init
         exit 1
     fi
+
+    without_config_items=$(jq '.sites[] | select(.config==null) | .config={}' < "$location")
+    if [ -n "$without_config_items" ]; then
+
+        error "missing config fields in sites items"
+        info "add missing config"
+        echo "$without_config_items" | jq
+        exit 1
+    fi
 fi
