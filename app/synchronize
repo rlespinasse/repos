@@ -96,7 +96,27 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
                 mkdir -p "${root_folder}/${site}/${name}"
                 if [ -d "${root_folder}/${site}/${name}/${repo}" ];
                 then
-                    syncRepository "$repo" "${site}" "${name}" "${root_folder}" "${sitekey}" &
+
+                    includerepos=$(cli_call rc read '.sites["'"$sitekey"'"].repositories.include')
+                    excluderepos=$(cli_call rc read '.sites["'"$sitekey"'"].repositories.exclude')
+
+                    status="excluded"
+                    if [ "$includerepos" == "[]" ] && [ "$excluderepos" == "[]" ];
+                    then
+                        status="synchronize_it"
+                    else
+                        includerepo=$(cli_call rc read '.sites["'"$sitekey"'"].repositories | select(.include[] | contains ("'"$repo"'"))')
+                        excluderepo=$(cli_call rc read '.sites["'"$sitekey"'"].repositories | select(.exclude[] | contains ("'"$repo"'"))')
+                        if [ -z "$excluderepo" ] && [ -n "$includerepo" ]; then
+                            status="synchronize_it"
+                        fi
+                    fi
+
+                    if [ "$status" == "synchronize_it" ]; then
+                        syncRepository "$repo" "${site}" "${name}" "${root_folder}" "${sitekey}" &
+                    elif [ "$status" == "excluded" ]; then
+                        warning "${site}/${name}/${repo} excluded"
+                    fi
                 fi
             done < <(echo "${all_repos}")
         done < <(cli_call rc read '.sites["'"$sitekey"'"] | [.owner, .site, .api, .type, .token] | join(",")')
