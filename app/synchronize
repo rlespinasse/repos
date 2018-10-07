@@ -33,18 +33,14 @@ syncRepository() {
     git -C "${REPODIR}" add -A .
     stash_result=$(git -C "${REPODIR}" stash)
     git -C "${REPODIR}" pull -q origin "${current_branch}" >/dev/null 2>&1
-    pull_result=$?
 
-    if [ $pull_result -gt 0 ]; then
-
-        default_branch=$(git symbolic-ref HEAD | sed 's/.*\///')
+    default_branch=$(git -C "${REPODIR}" symbolic-ref refs/remotes/origin/HEAD | sed 's/.*\///')
+    if [ "${current_branch}" != "$default_branch" ]; then
         info "${repofull} - synchronize ${default_branch} branch"
-        git -C "${REPODIR}" checkout -q "${default_branch}"
-        git -C "${REPODIR}" pull -q origin "${default_branch}"
+        git -C "${REPODIR}" fetch -q origin "${default_branch}:${default_branch}"
+    fi
 
-        info "${repofull} - delete ${current_branch}"
-        git -C "${REPODIR}" branch -q -D "${current_branch}"
-    elif [ "No local changes to save" != "$stash_result" ]; then
+    if [ "No local changes to save" != "$stash_result" ]; then
 
         info "${repofull} - unstash changes on ${current_branch}"
         git -C "${REPODIR}" stash pop -q
