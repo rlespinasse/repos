@@ -11,29 +11,31 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     root_folder=$(cli_call rc read '.root_folder')
     root_folder="${root_folder/#\~/$HOME}"
 
-    while IFS="," read -r name site api nametype token config;
+    while read -r sitekey;
     do
-        all_repos=$(curl -s "${api}/${nametype}/${name}/repos?access_token=${token}&per_page=100" | jq -r ".[].name" | sort)
-
-        while read -r repo;
+        while IFS="," read -r name site api nametype token;
         do
-            mkdir -p "${root_folder}/${site}/${name}"
-            if [ ! -d "${root_folder}/${site}/${name}/${repo}" ];
-            then
-                info "Clone ${site}/${name}/${repo}"
+            all_repos=$(curl -s "${api}/${nametype}/${name}/repos?access_token=${token}&per_page=100" | jq -r ".[].name" | sort)
 
-                mkdir -p "${root_folder}/repos/${site}/${name}"
-                git clone "git@${site}:${name}/${repo}.git" "${root_folder}/${site}/${name}/${repo}"
+            while read -r repo;
+            do
+                mkdir -p "${root_folder}/${site}/${name}"
+                if [ ! -d "${root_folder}/${site}/${name}/${repo}" ];
+                then
+                    info "Clone ${site}/${name}/${repo}"
 
-                if [ -n "$config" ]; then
+                    mkdir -p "${root_folder}/repos/${site}/${name}"
+                    git clone "git@${site}:${name}/${repo}.git" "${root_folder}/${site}/${name}/${repo}"
+
                     while IFS="=" read -r key value;
                     do
 
                         info "${root_folder}/${site}/${name}/${repo} - apply configuration $key = $value"
                         git -C "${root_folder}/${site}/${name}/${repo}" config "$key" "$value"
-                    done < <(echo "$config" | tr ',' '\n')
+                    done < <(cli_call rc read '.sites["'"$sitekey"'"].config | to_entries[] | [.key, .value] | "\(.[0])=\(.[1])"' | sed '/^$/d')
                 fi
-            fi
-        done < <(echo "${all_repos}")
-    done < <(cli_call rc read '.sites | to_entries[] | .value | [.owner, .site, .api, .type, .token, (.config | to_entries[] | [.key, .value] | "\(.[0])=\(.[1])")] | join(",")')
+            done < <(echo "${all_repos}")
+        done < <(cli_call rc read '.sites["'"$sitekey"'"] | [.owner, .site, .api, .type, .token] | join(",")')
+    done < <(cli_call rc read '.sites | to_entries[] | .key' | sed '/^$/d')
+
 fi
