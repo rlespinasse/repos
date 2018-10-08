@@ -105,8 +105,8 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
                     then
                         status="synchronize_it"
                     else
-                        includerepo=$(cli_call rc read '.sites["'"$sitekey"'"].repositories | select(.include[] | contains ("'"$repo"'"))')
-                        excluderepo=$(cli_call rc read '.sites["'"$sitekey"'"].repositories | select(.exclude[] | contains ("'"$repo"'"))')
+                        includerepo=$(cli_call rc read '.sites["'"$sitekey"'"].repositories | select(.include[] | contains ("'"$repo"'"))' | sed '/^$/d')
+                        excluderepo=$(cli_call rc read '.sites["'"$sitekey"'"].repositories | select(.exclude[] | contains ("'"$repo"'"))' | sed '/^$/d')
                         if [ -z "$excluderepo" ] && [ -n "$includerepo" ]; then
                             status="synchronize_it"
                         fi
