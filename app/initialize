@@ -39,8 +39,6 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
                     if [ ! -d "${root_folder}/${site}/${name}/${repo}" ];
                     then
                         info "Clone ${site}/${name}/${repo}"
-
-                        mkdir -p "${root_folder}/repos/${site}/${name}"
                         git clone "git@${site}:${name}/${repo}.git" "${root_folder}/${site}/${name}/${repo}"
 
                         while IFS="=" read -r key value;
